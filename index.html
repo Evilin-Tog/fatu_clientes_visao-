@@ -1,668 +1,89 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parametrização de Clientes</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        brand: {
-                            blue: '#0f4c81', /* Cor principal solicitada */
-                            light: '#e8f0fe',
-                            hover: '#0c3c66'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #f8fafc; }
-        
-        /* Smooth transitions */
-        .fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Custom inputs */
-        .form-input {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            color: #374151;
-            transition: border-color 0.15s;
-            outline: none;
-        }
-        .form-input:focus {
-            border-color: #0f4c81;
-            box-shadow: 0 0 0 1px #0f4c81;
-        }
-    </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal de Faturamento | LRL</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','ui-sans-serif','system-ui']},colors:{brand:{blue:'#174ea6',hover:'#123d83'}}}}};</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+body{background:#f5f7fb;color:#18243a}.shadow-soft{box-shadow:0 10px 30px rgba(20,44,85,.06)}.tab-active{color:#174ea6;border-color:#174ea6}.tab-inactive{color:#64748b;border-color:transparent}.row-hidden{display:none!important}.modal-open{overflow:hidden}
+</style>
 </head>
-<body class="text-gray-800 flex flex-col min-h-screen">
-
-    <div id="toast" role="status" aria-live="polite" class="hidden fixed top-5 right-5 z-[100] max-w-sm rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white shadow-xl"></div>
-
-    <!-- TELA 1: DASHBOARD -->
-    <div id="view-dashboard" class="block fade-in">
-        <!-- Topbar -->
-        <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-            <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-brand-blue rounded flex items-center justify-center text-white font-bold">P</div>
-                    <h1 class="text-lg font-bold text-gray-800">Parametrização de Clientes</h1>
-                </div>
-                <div class="flex items-center gap-4 text-sm font-medium text-gray-600">
-                    <span>Admin User</span>
-                    <div class="w-8 h-8 rounded-full bg-brand-light text-brand-blue flex items-center justify-center font-bold">AD</div>
-                </div>
-            </div>
-        </header>
-
-        <main class="max-w-7xl mx-auto px-6 py-8">
-            <!-- Filtros e ação principal -->
-            <div class="flex justify-end mb-4">
-                <button onclick="showAlert('Novo cadastro iniciado. Preencha os dados do cliente para continuar.','info')" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Novo Cadastro
-                </button>
-            </div>
-
-            <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mb-6">
-                <h2 class="text-sm font-bold text-gray-700 mb-4">Filtros</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                    <div><label for="filter-client" class="block text-xs font-semibold text-gray-600 mb-1">Cliente (sigla)</label><input id="filter-client" type="text" placeholder="Ex.: LRL" class="form-input"></div>
-                    <div><label for="filter-subcompany" class="block text-xs font-semibold text-gray-600 mb-1">Subempresa</label><input id="filter-subcompany" type="text" placeholder="Nome da subempresa" class="form-input"></div>
-                    <div><label for="filter-status" class="block text-xs font-semibold text-gray-600 mb-1">Status da fatura</label><select id="filter-status" class="form-input bg-white"><option value="">Todos</option><option value="ativo">Ativo</option><option value="inativo">Inativo</option><option value="pendente">Pendente</option><option value="em aprovação">Em aprovação</option></select></div>
-                    <div><label for="filter-period" class="block text-xs font-semibold text-gray-600 mb-1">Período da competência</label><input id="filter-period" type="month" class="form-input"></div>
-                    <div><label for="filter-owner" class="block text-xs font-semibold text-gray-600 mb-1">Responsável interno</label><input id="filter-owner" type="text" placeholder="Nome do responsável" class="form-input"></div>
-                    <div class="sm:col-span-2 lg:col-span-5 flex gap-2 justify-end">
-                        <button onclick="clearDashboardFilters()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">Limpar</button>
-                        <button onclick="searchClients()" class="bg-brand-blue hover:bg-brand-hover text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2"><i class="fa-solid fa-magnifying-glass"></i> Pesquisar</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tabela de Resultados -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold uppercase text-xs">
-                        <tr>
-                            <th class="px-6 py-4">Cliente</th>
-                            <th class="px-6 py-4">Subempresa</th>
-                            <th class="px-6 py-4">Status do faturamento</th>
-                            <th class="px-6 py-4">Responsável interno</th>
-                            <th class="px-6 py-4 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr class="hover:bg-gray-50 transition-colors" data-competencia="2026-09">
-                            <td class="px-6 py-4 font-bold text-gray-900">LRL</td>
-                            <td class="px-6 py-4 text-gray-700">LOREAL BRASIL</td>
-                            <td class="px-6 py-4">
-                                <span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-semibold">Ativo</span>
-                            </td>
-                            <td class="px-6 py-4 text-gray-700">Larissa Souza</td>
-                            <td class="px-6 py-4 text-right">
-                                <button onclick="openModal()" class="text-brand-blue hover:text-brand-hover font-semibold px-3 py-1 rounded transition-colors flex items-center gap-2 ml-auto">
-                                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                                </button>
-                            </td>
-                        </tr>
-                        <!-- Linha fictícia para contexto -->
-                        <tr class="hover:bg-gray-50 transition-colors" data-competencia="2026-08">
-                            <td class="px-6 py-4 font-bold text-gray-900">COTY</td>
-                            <td class="px-6 py-4 text-gray-700">COTY BRASIL</td>
-                            <td class="px-6 py-4">
-                                <span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">Inativo</span>
-                            </td>
-                            <td class="px-6 py-4 text-gray-700">Rafael Mendes</td>
-                            <td class="px-6 py-4 text-right">
-                                <button class="text-gray-400 hover:text-gray-600 font-semibold px-3 py-1 rounded transition-colors flex items-center gap-2 ml-auto">
-                                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </main>
-    </div>
-
-    <!-- TELA 2: MODAL DE EDIÇÃO -->
-    <div id="modal-overlay" class="fixed inset-0 z-50 bg-gray-900 bg-opacity-60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        
-        <!-- Modal Container -->
-        <div class="bg-white w-full max-w-6xl h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden fade-in transform scale-100">
-            
-            <!-- Cabeçalho do Modal -->
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
-                <h2 class="text-xl font-bold text-gray-800">Parametrização - LRL - LOREAL BRASIL</h2>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 transition-colors">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Abas Minimalistas -->
-            <div class="px-6 border-b border-gray-200 flex gap-6 bg-white pt-2">
-                <button onclick="switchTab('tab-frete')" id="btn-tab-frete" class="tab-btn pb-3 text-sm font-medium border-b-2 text-gray-500 border-transparent hover:text-gray-700">Tabela de Frete</button>
-                <button onclick="switchTab('tab-faturamento')" id="btn-tab-faturamento" class="tab-btn pb-3 text-sm font-medium border-b-2 text-gray-500 border-transparent hover:text-gray-700">Regras de Faturamento</button>
-                <button onclick="switchTab('tab-armazenagem')" id="btn-tab-armazenagem" class="tab-btn pb-3 text-sm font-medium border-b-2 text-gray-500 border-transparent hover:text-gray-700">Armazenagem</button>
-                <button onclick="switchTab('tab-manuseio')" id="btn-tab-manuseio" class="tab-btn pb-3 text-sm font-medium border-b-2 text-gray-500 border-transparent hover:text-gray-700">Manuseio e OS</button>
-                <button onclick="switchTab('tab-aprovacao')" id="btn-tab-aprovacao" class="tab-btn pb-3 text-sm font-medium border-b-2 text-gray-500 border-transparent hover:text-gray-700">Aprovação e Notificação</button>
-            </div>
-
-            <!-- Área Rolável do Modal -->
-            <div class="flex-1 overflow-y-auto bg-white p-6 relative">
-
-                <div class="mb-6 rounded-lg border border-brand-light bg-blue-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <label for="division-select" class="text-sm font-semibold text-gray-700 whitespace-nowrap">Divisão do cliente LRL:</label>
-                    <select id="division-select" class="form-input sm:max-w-md" onchange="changeDivision(this.value)">
-                        <option value="LOREAL BRASIL">LOREAL BRASIL</option><option>LOREAL STAR</option><option>Loreal Seeding Elseve</option><option>Loreal Seeding ARM</option><option>LOREAL GARNIER</option><option>LOREAL CASTING</option><option>LOREAL SEEDING COLORAMA</option><option>LORÉAL ÓLEO</option><option>LOREAL GARNIER HIALURONICO</option><option>LORÉAL SEEDING Maybelline</option><option>LPD KITS</option><option>LORÉAL SEEDING KÉRASTASE</option><option>SEEDING COLOR WOW</option><option>LORÉAL SEEDING SOLAR</option>
-                    </select>
-                    <span id="division-config-hint" class="text-xs text-gray-600">Tabela de frete e parâmetros desta divisão.</span>
-                </div>
-                
-                <!-- Banner Amarelo -->
-                <div class="mb-6 bg-[#fffbeb] border-l-4 border-[#fbbf24] p-4 rounded-r-md">
-                    <p class="text-sm text-[#92400e] font-medium"><span class="font-bold">Nota:</span> A tabela de frete e os parâmetros de faturamento, armazenagem e OS são configurados por divisão. Confirme a integração com o sistema legado, que aplica as tarifas aos pedidos. Alterações exigem aprovação do Gestor da Área.</p>
-                </div>
-
-                <!-- ABA: TABELA DE FRETE -->
-                <div id="tab-frete" class="tab-content hidden">
-                    <div class="mb-6">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">TABELA DE FRETE DA DIVISÃO</h3>
-                        <p class="text-sm text-gray-600 mb-4">Importe ou consulte a tabela vinculada à divisão selecionada. Nesta demonstração, o arquivo baixado e a prévia são exemplos.</p>
-                        <div class="flex flex-wrap justify-end gap-2 mb-3">
-                            <button onclick="downloadFreightTable()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold flex items-center gap-2"><i class="fa-solid fa-download"></i> Baixar tabela (CSV)</button>
-                        </div>
-                        <div id="upload-area" class="border border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center bg-gray-50">
-                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 mb-3"></i>
-                            <p class="text-sm text-gray-600 mb-4 text-center">Selecione uma planilha para importar a tabela desta divisão.</p>
-                            <label class="bg-white border border-brand-blue text-brand-blue hover:bg-brand-light px-4 py-2 rounded-md text-sm font-semibold cursor-pointer"><i class="fa-solid fa-upload mr-1"></i> Selecionar planilha<input type="file" accept=".csv,.xls,.xlsx" class="hidden" onchange="handleFreightUpload(event)"></label>
-                            <button onclick="simularUpload()" class="text-xs text-gray-500 underline mt-2">Carregar prévia de exemplo</button>
-                        </div>
-                        <div id="upload-success" class="hidden mt-4">
-                            <div class="bg-green-50 border border-green-200 p-4 rounded-md mb-4 flex items-center gap-3"><i class="fa-solid fa-circle-check text-green-600 text-lg"></i><p class="text-sm font-medium text-green-800">Prévia de exemplo carregada para esta divisão.</p></div>
-                            <div class="overflow-x-auto"><table class="w-full text-left text-sm border border-gray-200 rounded-md overflow-hidden"><thead class="bg-gray-50 border-b border-gray-200 text-gray-600"><tr><th class="px-4 py-2 font-medium">Origem</th><th class="px-4 py-2 font-medium">Destino</th><th class="px-4 py-2 font-medium">Modal</th><th class="px-4 py-2 font-medium">Tarifa</th></tr></thead><tbody><tr><td class="px-4 py-2 border-b border-gray-100">Barueri SP</td><td class="px-4 py-2 border-b border-gray-100">Manaus AM</td><td class="px-4 py-2 border-b border-gray-100">Aéreo</td><td class="px-4 py-2 border-b border-gray-100">R$ 0,00</td></tr></tbody></table></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ABA: REGRAS DE FATURAMENTO -->
-                <div id="tab-faturamento" class="tab-content hidden">
-                    
-                    <!-- DADOS GERAIS -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">DADOS GERAIS</h3>
-                        <div class="w-full md:w-1/3">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Divisão</label>
-                            <input id="billing-division" class="form-input bg-gray-100" value="LOREAL BRASIL" readonly>
-                        </div>
-                    </div>
-
-                    <!-- COMUNICAÇÃO -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">COMUNICAÇÃO E TEXTOS</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">E-mail para Notas de Serviço</label>
-                                <input type="email" value="fiscal@pierserv.com.br" class="form-input">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Descrição Padrão (Forma de Pagto)</label>
-                                <textarea rows="1" class="form-input resize-none">DEPOSITO</textarea>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Descrição Padrão (Campo Observação)</label>
-                                <textarea rows="2" class="form-input resize-none">DADOS PARA DEPÓSITO: 604 - BANCO INDUSTRIAL DO BRASIL AGÊNCIA 0001-9 - CONTA : 019017254-8</textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FATURAMENTO E P.O. -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">SUBDESPESAS FATURÁVEIS</h3>
-                        <p class="text-xs text-gray-500 mb-3">Selecione todas as subdespesas aplicáveis a este cliente.</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Armazenagem" checked class="w-4 h-4 text-brand-blue"><span class="text-sm">Armazenagem (M³, pallet, bloco, box)</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Seguro" class="w-4 h-4 text-brand-blue"><span class="text-sm">Seguro e valor base</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Movimentacao" class="w-4 h-4 text-brand-blue"><span class="text-sm">Movimentação e dias sem movimentação</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Retirada" class="w-4 h-4 text-brand-blue"><span class="text-sm">Retirada / coleta</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Devolucao" class="w-4 h-4 text-brand-blue"><span class="text-sm">Devolução</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Reentrega" class="w-4 h-4 text-brand-blue"><span class="text-sm">Reentrega</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="OS_Recebimento" class="w-4 h-4 text-brand-blue"><span class="text-sm">OS de recebimento</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="OS_Expedicao" class="w-4 h-4 text-brand-blue"><span class="text-sm">OS de expedição</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="OS_Armazenagem" class="w-4 h-4 text-brand-blue"><span class="text-sm">OS de armazenagem (SP/demais cidades)</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="OS_Anvisa" class="w-4 h-4 text-brand-blue"><span class="text-sm">OS de armazenagem Anvisa</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Manuseio_DPGP" class="w-4 h-4 text-brand-blue"><span class="text-sm">Manuseio DPGP (total e unitário)</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Manuseio_LBD" class="w-4 h-4 text-brand-blue"><span class="text-sm">Manuseio LBD (total e unitário)</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="subdespesa" value="Frete" checked class="w-4 h-4 text-brand-blue"><span class="text-sm">Frete e tarifas</span></label>
-                        </div>
-                    </div>
-
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">TIPO DE COBRANÇA E DIMENSÕES</h3>
-                        <p class="text-xs text-gray-500 mb-3">Marque os dados que devem ser informados para classificar a cobrança.</p>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Campanha" class="w-4 h-4 text-brand-blue"><span class="text-sm">Campanha</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Grupo" class="w-4 h-4 text-brand-blue"><span class="text-sm">Grupo</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Subgrupo" class="w-4 h-4 text-brand-blue"><span class="text-sm">Subgrupo</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Requisitante" class="w-4 h-4 text-brand-blue"><span class="text-sm">Requisitante</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="AD" class="w-4 h-4 text-brand-blue"><span class="text-sm">AD</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="BU" class="w-4 h-4 text-brand-blue"><span class="text-sm">BU</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Departamento" class="w-4 h-4 text-brand-blue"><span class="text-sm">Departamento</span></label>
-                            <label class="flex items-center gap-2"><input type="checkbox" name="tipo_cobranca" value="Canal" class="w-4 h-4 text-brand-blue"><span class="text-sm">Canal</span></label>
-                        </div>
-                    </div>
-
-                    <!-- FATURAMENTO E P.O. -->
-                    <div class="mb-4">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">FATURAMENTO E P.O.</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-brand-blue rounded border-gray-300 focus:ring-brand-blue"><span class="text-sm text-gray-700">P.O. Única</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-brand-blue rounded border-gray-300 focus:ring-brand-blue"><span class="text-sm text-gray-700">P.O. - Armazém</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-brand-blue rounded border-gray-300 focus:ring-brand-blue"><span class="text-sm text-gray-700">P.O. - Serviços</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 text-brand-blue rounded border-gray-300 focus:ring-brand-blue"><span class="text-sm font-semibold text-gray-900">ND Nota Fiscal</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-brand-blue rounded border-gray-300 focus:ring-brand-blue"><span class="text-sm text-gray-700">Obrigatório subir P.O. antes da NF</span></label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"><span class="text-sm text-red-700 font-medium">Sem P.O.</span></label>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ABA 3: ARMAZENAGEM -->
-                <div id="tab-armazenagem" class="tab-content hidden">
-                    
-                    <!-- ESPAÇO E ARMAZENAGEM -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">ESPAÇO E ARMAZENAGEM</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                            
-                            <!-- Toggle Item Group -->
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-800">M3_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer" checked>
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                                <input type="text" value="14.97" class="form-input font-medium">
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-500">ConversaoPalletM3</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer">
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                                <input type="text" disabled class="form-input bg-gray-100 text-gray-400">
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-500">Blocado_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer">
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                                <input type="text" disabled class="form-input bg-gray-100 text-gray-400">
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-500">Box_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer">
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                                <input type="text" disabled class="form-input bg-gray-100 text-gray-400">
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-500">ValidadeProd_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer">
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-800">Depto_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer" checked>
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-800">Canal_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer" checked>
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- VALORES E SEGUROS -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">VALORES E SEGUROS</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">ValorBase_Arm</label>
-                                <input type="text" value="27.82" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">ValorSeguro_Arm</label>
-                                <input type="text" value="0.2" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">PercSeguroBase_Arm (%)</label>
-                                <input type="text" value="0.3" class="form-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- MOVIMENTAÇÃO E FREE TIME -->
-                    <div class="mb-4">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">MOVIMENTAÇÃO E FREE TIME</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-800">Cobr_Acima_Dias_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer" checked>
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Dias Acima % a Cobrar</label>
-                                <input type="text" value="90" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">DiasSemMov_Arm</label>
-                                <input type="text" value="0" class="form-input">
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2 mt-4">
-                                    <span class="text-sm font-semibold text-gray-500">Tem_Free_Arm</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                      <input type="checkbox" class="sr-only peer">
-                                      <div class="w-8 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-blue"></div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ABA 4: MANUSEIO E OS -->
-                <div id="tab-manuseio" class="tab-content hidden">
-                    
-                    <!-- RETIRADAS E MANUSEIO -->
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">RETIRADAS E MANUSEIO</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr_Retira_NF</label>
-                                <input type="text" value="0.95" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Fator_Retira_NF</label>
-                                <input type="text" value="0.95" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">PercDevolucao_OC (%)</label>
-                                <input type="text" value="100" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">PercReentrega_OC (%)</label>
-                                <input type="text" value="50" class="form-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ORDENS DE SERVIÇO (OS) -->
-                    <div class="mb-4">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">ORDENS DE SERVIÇO (OS)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS Recebimento</label>
-                                <input type="text" value="6.5" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS Expedição</label>
-                                <input type="text" value="6.5" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS ARM SP</label>
-                                <input type="text" value="13.62" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS ARM Demais Cid</label>
-                                <input type="text" value="26.18" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS ARM SP Anvisa</label>
-                                <input type="text" value="18" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS ARM SP Anvisa Demais Cid</label>
-                                <input type="text" value="34.6" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS Manuseio DPGP</label>
-                                <input type="text" value="0.6" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr OS Manuseio LBD</label>
-                                <input type="text" value="0.6" class="form-input">
-                            </div>
-                            <div>
-                                <!-- Placeholder para alinhamento do grid -->
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr Unit OS Manuseio DPGP</label>
-                                <input type="text" value="1.1" class="form-input">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Vlr Unit OS Manueio LBD</label>
-                                <input type="text" value="1.1" class="form-input">
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ABA: APROVAÇÃO E NOTIFICAÇÃO -->
-                <div id="tab-aprovacao" class="tab-content hidden">
-                    <div class="mb-8">
-                        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">APROVADOR E NOTIFICAÇÕES DE FATURAMENTO</h3>
-                        <p class="text-sm text-gray-600 mb-4">A pessoa indicada como aprovadora também receberá as notificações de faturamento desta divisão.</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">Nome do responsável pela aprovação</label><input name="approval_name" class="form-input" placeholder="Nome completo"></div>
-                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">E-mail do aprovador e destinatário das notificações</label><input name="approval_email" type="email" class="form-input" placeholder="nome@empresa.com"><p class="text-xs text-gray-500 mt-1">Este contato aprova e recebe avisos de faturamento.</p></div>
-                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">E-mails adicionais para notificação (opcional)</label><input name="notification_emails" type="text" class="form-input" placeholder="email1@empresa.com; email2@empresa.com"><p class="text-xs text-gray-500 mt-1">Separe os endereços por ponto e vírgula.</p></div>
-                            <div><label class="block text-xs font-semibold text-gray-600 mb-1">Responsável interno pelo faturamento do cliente</label><input name="internal_billing_owner" class="form-input" placeholder="Nome do responsável pela carteira"><p class="text-xs text-gray-500 mt-1">Responsável interno pela carteira deste cliente.</p></div>
-                        </div>
-                    </div>
-                    <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><strong>Configuração por divisão:</strong> aprovador, notificações e responsável interno ficam associados à divisão selecionada.</div>
-                </div>
-
-            </div>
-
-            <!-- Modal Footer (Ações) -->
-            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
-                <button onclick="saveChanges()" class="px-4 py-2 bg-brand-blue text-white rounded-md text-sm font-semibold hover:bg-brand-hover transition-colors shadow-sm">Salvar Alterações</button>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        // Modal Logic
-        const modal = document.getElementById('modal-overlay');
-
-        const divisionStates = {};
-        const freightPreviewStates = {};
-        let activeDivision = 'LOREAL BRASIL';
-        function snapshotDivision() {
-            const controls = [...modal.querySelectorAll('input:not([type=file]), textarea, select')].filter(el => el.id !== 'division-select');
-            return controls.map(el => ({value:el.value, checked:el.type === 'checkbox' ? el.checked : undefined}));
-        }
-        function restoreDivision(state) {
-            const controls = [...modal.querySelectorAll('input:not([type=file]), textarea, select')].filter(el => el.id !== 'division-select');
-            controls.forEach((el, i) => { if (!state || !state[i]) return; el.value=state[i].value; if (el.type === 'checkbox') el.checked=state[i].checked; });
-        }
-        const baselineDivisionState = snapshotDivision();
-        function changeDivision(name) {
-            divisionStates[activeDivision] = snapshotDivision();
-            freightPreviewStates[activeDivision] = !document.getElementById('upload-success').classList.contains('hidden');
-            activeDivision = name;
-            document.querySelector('#modal-overlay h2').textContent = `Parametrização - LRL - ${name}`;
-            document.getElementById('billing-division').value = name;
-            restoreDivision(divisionStates[name] || baselineDivisionState);
-            document.getElementById('upload-area').classList.toggle('hidden', !!freightPreviewStates[name]);
-            document.getElementById('upload-success').classList.toggle('hidden', !freightPreviewStates[name]);
-            document.getElementById('billing-division').value = name;
-            document.getElementById('division-config-hint').textContent = `Tabela de frete e parâmetros de ${name}.`;
-            showAlert(`Configuração da divisão ${name} selecionada. Cada divisão mantém seus próprios parâmetros.`, 'info');
-        }
-
-        function openModal() {
-            modal.classList.remove('hidden');
-            document.getElementById('division-select').value = activeDivision;
-            // Select first tab by default
-            switchTab('tab-frete');
-        }
-
-        function closeModal() {
-            modal.classList.add('hidden');
-        }
-
-        let toastTimer;
-        function showAlert(message, type='success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `fixed top-5 right-5 z-[100] max-w-sm rounded-lg px-5 py-3 text-sm font-medium text-white shadow-xl ${type === 'error' ? 'bg-red-700' : type === 'info' ? 'bg-brand-blue' : 'bg-emerald-700'}`;
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
-        }
-
-        function searchClients() {
-            const client = document.getElementById('filter-client').value.trim().toLowerCase();
-            const subcompany = document.getElementById('filter-subcompany').value.trim().toLowerCase();
-            const status = document.getElementById('filter-status').value.trim().toLowerCase();
-            const period = document.getElementById('filter-period').value;
-            const owner = document.getElementById('filter-owner').value.trim().toLowerCase();
-            let matches = 0;
-            document.querySelectorAll('#view-dashboard tbody tr').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const visible = cells[0].textContent.toLowerCase().includes(client)
-                    && cells[1].textContent.toLowerCase().includes(subcompany)
-                    && cells[2].textContent.toLowerCase().includes(status)
-                    && cells[3].textContent.toLowerCase().includes(owner)
-                    && (!period || row.dataset.competencia === period);
-                row.classList.toggle('hidden', !visible);
-                if (visible) matches++;
-            });
-            showAlert(matches ? `${matches} cliente(s) encontrado(s).` : 'Nenhum cliente encontrado para esses filtros.', matches ? 'success' : 'error');
-        }
-
-        function clearDashboardFilters() {
-            ['filter-client','filter-subcompany','filter-status','filter-period','filter-owner'].forEach(id => document.getElementById(id).value = '');
-            document.querySelectorAll('#view-dashboard tbody tr').forEach(row => row.classList.remove('hidden'));
-        }
-
-        function saveChanges() {
-            divisionStates[activeDivision] = snapshotDivision();
-            showAlert(`Alterações da divisão ${activeDivision} guardadas nesta demonstração. Conecte ao Django para persistência.`);
-            closeModal();
-        }
-
-        function downloadFreightTable() {
-            const division = document.getElementById('division-select').value;
-            const csv = `\uFEFFDivisão;Origem;Destino;Modal;Tarifa\r\n${division};Barueri SP;Manaus AM;Aéreo;0,00\r\n`;
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-            link.download = `tabela_frete_${division.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.csv`;
-            link.click();
-            URL.revokeObjectURL(link.href);
-            showAlert('Download da tabela de exemplo iniciado.');
-        }
-
-        function handleFreightUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            simularUpload();
-            showAlert(`Arquivo "${file.name}" selecionado para ${document.getElementById('division-select').value}. A validação e gravação dependem do backend.`, 'info');
-        }
-
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            // Esconde todo conteúdo
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-                content.classList.remove('block', 'fade-in');
-            });
-
-            // Remove styling de todos os botões (estado inativo)
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('text-brand-blue', 'border-brand-blue', 'font-semibold');
-                btn.classList.add('text-gray-500', 'border-transparent', 'font-medium');
-            });
-
-            // Mostra o conteúdo da aba selecionada
-            const targetContent = document.getElementById(tabId);
-            targetContent.classList.remove('hidden');
-            targetContent.classList.add('block', 'fade-in');
-
-            // Adiciona styling no botão ativo
-            const targetBtn = document.getElementById(`btn-${tabId}`);
-            targetBtn.classList.remove('text-gray-500', 'border-transparent', 'font-medium');
-            targetBtn.classList.add('text-brand-blue', 'border-brand-blue', 'font-semibold');
-        }
-
-        function simularUpload() {
-            document.getElementById('upload-area').classList.add('hidden');
-            document.getElementById('upload-success').classList.remove('hidden');
-            document.getElementById('upload-success').classList.add('fade-in');
-            showAlert(`Prévia de tabela carregada para ${document.getElementById('division-select').value}.`, 'info');
-        }
-
-        ['filter-client','filter-subcompany','filter-status','filter-period','filter-owner'].forEach(id => document.getElementById(id).addEventListener('keydown', event => { if (event.key === 'Enter') searchClients(); }));
-        document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
-        modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
-    </script>
+<body class="font-sans min-h-screen">
+<header class="bg-white border-b border-slate-200"><div class="max-w-[1440px] mx-auto px-5 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Portal do cliente</div><div class="font-bold text-lg">Faturamento LRL</div></div></div><div class="flex items-center gap-3"><span class="hidden sm:inline-flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-circle-check text-emerald-600"></i> Dados atualizados em 01/10/2026 às 09:42</span><button class="w-10 h-10 rounded-full border border-slate-200 text-slate-600" title="Notificações" onclick="toast('Você está em dia com as notificações.')"><i class="fa-regular fa-bell"></i></button><div class="w-9 h-9 rounded-full bg-brand-blue text-white flex items-center justify-center text-sm font-bold">LR</div></div></div></header>
+<main class="max-w-[1440px] mx-auto px-5 lg:px-8 py-7">
+ <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6"><div><div class="text-sm text-slate-500">Cliente <span class="mx-1">/</span> LRL <span class="mx-1">/</span> LOREAL BRASIL</div><h1 class="text-2xl sm:text-3xl font-bold mt-2">Conferência do faturamento</h1><p class="text-slate-500 mt-2">Confira os valores da competência, aprove os itens ou solicite revisão com uma observação.</p></div><div class="flex flex-wrap gap-3 items-end"><label class="text-xs font-semibold text-slate-600">Competência<select id="competence" class="mt-1 block rounded-lg border-slate-300 border bg-white px-3 py-2.5 text-sm"><option value="setembro de 2026">Setembro de 2026</option><option value="agosto de 2026">Agosto de 2026</option></select></label><button onclick="openChat('client')" class="rounded-lg border border-blue-200 bg-blue-50 text-brand-blue px-4 py-2.5 text-sm font-semibold hover:bg-blue-100"><i class="fa-regular fa-comments mr-2"></i>Conversa com faturamento</button><button onclick="exportReport()" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold hover:bg-slate-50"><i class="fa-regular fa-file-excel text-emerald-700 mr-2"></i>Baixar relatório</button></div></div>
+ <section class="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white p-4 sm:p-5 mb-6"><div class="flex flex-col md:flex-row md:items-center justify-between gap-4"><div><div class="text-xs uppercase font-bold tracking-wide text-brand-blue">Prazos importantes</div><div class="text-sm text-slate-600 mt-1">Acompanhe as etapas para emissão da nota desta competência.</div></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 flex-1 lg:max-w-[850px]">
+ <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[11px] uppercase text-slate-500 font-semibold">Aprovar até</div><div class="font-bold mt-1">05 out 2026</div><div class="text-[11px] text-amber-700 mt-1"><i class="fa-regular fa-clock mr-1"></i>Prazo de aprovação</div></div>
+ <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[11px] uppercase text-slate-500 font-semibold">Emitir ND até</div><div class="font-bold mt-1">08 out 2026</div><div class="text-[11px] text-slate-500 mt-1">Após aprovação</div></div>
+ <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[11px] uppercase text-slate-500 font-semibold">Emitir NF até</div><div class="font-bold mt-1">10 out 2026</div><div class="text-[11px] text-slate-500 mt-1">Após envio da ND</div></div>
+ <div class="bg-white border border-slate-200 rounded-xl p-3"><div class="text-[11px] uppercase text-slate-500 font-semibold">Vencimento previsto</div><div class="font-bold mt-1">15 out 2026</div><div class="text-[11px] text-slate-500 mt-1">Conforme condição comercial</div></div>
+ </div></div></section>
+ <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6" id="summary-cards"></section>
+ <section class="bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden">
+  <div class="px-5 pt-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold text-lg">Itens para conferência</h2><p class="text-sm text-slate-500 mt-1">Selecione pedidos, serviços ou itens de armazenagem para aprovar ou solicitar revisão.</p></div><div class="flex items-center gap-2"><span id="selected-count" class="text-xs text-slate-500">0 itens selecionados</span><button onclick="approveSelected()" class="rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 text-sm font-semibold"><i class="fa-solid fa-check mr-1"></i>Aprovar selecionados</button><button onclick="openReview()" class="rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-2 text-sm font-semibold"><i class="fa-solid fa-rotate mr-1"></i>Solicitar revisão</button></div></div>
+  <div class="px-5 pt-3 border-b border-slate-200 flex gap-5 overflow-x-auto" id="service-tabs"></div>
+  <div class="p-5"><div class="flex flex-wrap items-center justify-between gap-3 mb-4"><div><h3 id="report-title" class="font-semibold"></h3><p id="report-hint" class="text-xs text-slate-500 mt-1"></p></div><div class="flex items-center gap-2"><label class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i><input id="search" oninput="renderRows()" class="rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-sm w-56" placeholder="Buscar pedido ou descrição"></label><button onclick="selectVisible()" class="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-slate-50">Selecionar exibidos</button></div></div>
+   <div class="overflow-x-auto border border-slate-200 rounded-xl"><table class="w-full min-w-[1000px] text-left text-sm"><thead id="table-head" class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"></thead><tbody id="table-body" class="divide-y divide-slate-100"></tbody></table></div>
+   <div id="no-rows" class="hidden py-12 text-center text-sm text-slate-500">Nenhum item encontrado.</div>
+   <div class="mt-4 flex flex-col sm:flex-row justify-between gap-3 text-xs text-slate-500"><span><i class="fa-solid fa-lock mr-1"></i> As solicitações ficam registradas no histórico da competência.</span><span id="service-total" class="font-bold text-slate-800"></span></div>
+  </div>
+ </section>
+ <section class="mt-6 bg-white border border-slate-200 rounded-2xl shadow-soft overflow-hidden"><div class="p-5 border-b border-slate-200"><h2 class="font-bold">Histórico de aprovações e revisões</h2><p class="text-sm text-slate-500 mt-1">Acompanhe as ações registradas por item.</p></div><div class="overflow-x-auto"><table class="w-full min-w-[700px] text-sm text-left"><thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-5 py-3">Data</th><th class="px-5 py-3">Item</th><th class="px-5 py-3">Ação</th><th class="px-5 py-3">Observação</th><th class="px-5 py-3">Status</th></tr></thead><tbody id="history-body" class="divide-y divide-slate-100"></tbody></table></div><div id="history-empty" class="px-5 py-8 text-center text-sm text-slate-500">As ações realizadas nesta tela aparecerão aqui.</div></section>
+ <footer class="py-6 text-xs text-slate-400 flex flex-wrap justify-between gap-2"><span>LRL · Portal de conferência de faturamento</span><span>Protótipo navegável · valores demonstrativos</span></footer>
+</main>
+<div id="review-modal" class="hidden fixed inset-0 z-50 bg-slate-950/50 p-4 items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6"><div class="flex justify-between items-start"><div><div class="text-xs uppercase tracking-wide text-amber-700 font-bold">Solicitação de revisão</div><h2 class="text-xl font-bold mt-1">Explique o que precisa ser revisado</h2></div><button onclick="closeReview()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-xl"></i></button></div><p id="review-items" class="text-sm text-slate-500 mt-3"></p><label class="block text-sm font-semibold mt-5 mb-1" for="review-reason">Crítica / motivo da revisão <span class="text-rose-600">*</span></label><textarea id="review-reason" rows="4" class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-600" placeholder="Ex.: divergência no valor do frete do pedido..." required></textarea><div class="flex justify-end gap-2 mt-5"><button onclick="closeReview()" class="rounded-lg border px-4 py-2 text-sm font-semibold">Cancelar</button><button onclick="submitReview()" class="rounded-lg bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 text-sm font-semibold"><i class="fa-solid fa-paper-plane mr-1"></i>Enviar revisão</button></div></div></div>
+<div id="chat-modal" class="hidden fixed inset-0 z-50 bg-slate-950/50 p-3 sm:p-6 items-center justify-center"><div class="bg-white w-full max-w-6xl h-[min(760px,94vh)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"><div class="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-3"><div><div class="text-xs uppercase font-bold tracking-wide text-brand-blue">Atendimento de faturamento</div><h2 class="text-lg font-bold">Conversa · LRL / LOREAL BRASIL</h2></div><button onclick="closeChat()" class="w-9 h-9 rounded-lg border text-slate-500"><i class="fa-solid fa-xmark"></i></button></div><div class="flex min-h-0 flex-1"><aside id="chat-sidebar" class="w-64 shrink-0 border-r bg-slate-50 hidden"><div class="p-4 border-b"><input class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar cliente" value="LRL"></div><button class="w-full p-4 text-left border-l-4 border-brand-blue bg-white"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center">LR</div><div><div class="font-bold text-sm">LRL · LOREAL BRASIL</div><div id="chat-preview" class="text-xs text-slate-500 truncate max-w-40">Conversa sobre faturamento</div></div></div></button><div class="p-4 text-[11px] text-slate-400">Competência · setembro de 2026</div></aside><section class="flex min-w-0 flex-1 flex-col"><div class="px-5 py-3 border-b bg-white flex items-center justify-between"><div><div id="chat-role-label" class="text-sm font-bold">Conversa com a equipe de faturamento</div><div class="text-xs text-emerald-700"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Canal ativo</div></div><span class="text-[11px] text-slate-400"><i class="fa-regular fa-envelope mr-1"></i>E-mail de notificação demonstrativo</span></div><div id="chat-feed" class="flex-1 overflow-y-auto bg-slate-100 p-5 space-y-3"></div><div class="p-4 border-t bg-white"><div class="flex gap-2"><input id="chat-input" class="min-w-0 flex-1 rounded-full border border-slate-300 px-4 py-3 text-sm" placeholder="Digite uma mensagem para o faturamento..."><button onclick="sendChatMessage()" class="w-11 h-11 rounded-full bg-brand-blue text-white hover:bg-blue-800"><i class="fa-solid fa-paper-plane"></i></button></div><div class="text-[10px] text-slate-400 mt-2">Ações do cliente também ficam registradas nesta conversa. O envio real de e-mail será conectado pelo backend.</div></div></section></div></div></div>
+<div id="toast" class="fixed bottom-5 right-5 z-[60] hidden max-w-md rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-xl"></div>
+<script>
+const records=[
+ {id:'dist-1',service:'distribution',type:'Pedido',reference:'752416',description:'Campanha L’Oréal Paris · Job 1395 · PN 768572',detail:'Distribuição',amount:2580.00,status:'Aguardando aprovação'},
+ {id:'dist-2',service:'distribution',type:'Pedido',reference:'752419',description:'Campanha Garnier · Job 1395 · PN 768574',detail:'Distribuição',amount:5618.12,status:'Aguardando aprovação'},
+ {id:'dist-3',service:'distribution',type:'Pedido',reference:'753105',description:'Reposição varejo · Job 1402 · PN 769002',detail:'Distribuição',amount:4998.42,status:'Aguardando aprovação'},
+ {id:'storage-1',service:'storage',type:'Item armazenado',reference:'SKU 789100',description:'L’Oréal Paris Elseve · 18 pallets · 12,4 m³ · 30 dias',detail:'Armazenagem',amount:12450.00,status:'Aguardando aprovação'},
+ {id:'storage-2',service:'storage',type:'Item armazenado',reference:'SKU 789230',description:'Garnier Fructis · 9 pallets · 6,3 m³ · 30 dias',detail:'Armazenagem',amount:6300.00,status:'Aguardando aprovação'},
+ {id:'os-1',service:'os',type:'Ordem de serviço',reference:'OS 58102',description:'Recebimento · Pedido 752416 · 1 serviço',detail:'Ordem de serviço',amount:390.00,status:'Aguardando aprovação'},
+ {id:'os-2',service:'os',type:'Ordem de serviço',reference:'OS 58111',description:'Expedição · Pedido 752419 · 2 serviços',detail:'Ordem de serviço',amount:410.00,status:'Aguardando aprovação'},
+ {id:'os-3',service:'os',type:'Ordem de serviço',reference:'OS 58115',description:'Armazenagem · Pedido 753105 · 4 serviços',detail:'Ordem de serviço',amount:830.00,status:'Aguardando aprovação'},
+ {id:'handling-1',service:'handling',type:'Ordem de manuseio',reference:'OM 88231',description:'Separação e preparação · Pedido 752416 · 16 volumes',detail:'Manuseio',amount:785.30,status:'Aguardando aprovação'},
+ {id:'handling-2',service:'handling',type:'Ordem de manuseio',reference:'OM 88245',description:'Montagem de kits · Pedido 752419 · 24 volumes',detail:'Manuseio',amount:1460.00,status:'Aguardando aprovação'},
+ {id:'pending-1',service:'pending',type:'Pendência anterior',reference:'Pedido 748890',description:'Distribuição · competência agosto/2026 · complemento de frete',detail:'Competência anterior',amount:1540.00,status:'Aguardando aprovação'},
+ {id:'pending-2',service:'pending',type:'Pendência anterior',reference:'OS 57409',description:'Ordem de serviço · competência agosto/2026 · serviço adicional',detail:'Competência anterior',amount:800.00,status:'Aguardando aprovação'}
+];
+const services=[['all','Total geral','fa-chart-pie'],['distribution','Pedidos (distribuição)','fa-truck-fast'],['storage','Armazenagem','fa-warehouse'],['os','Ordens de serviço','fa-screwdriver-wrench'],['handling','Manuseio','fa-boxes-stacked'],['pending','Pendências de outros meses','fa-clock-rotate-left']];
+let activeService='all',selected=new Set(),history=[],toastTimer,chatMode='client';
+const chatKey='lrlBillingChatMessages';
+let chatMessages=[{from:'internal',text:'Olá! O faturamento de setembro/2026 está disponível para conferência. Se encontrar alguma divergência, selecione o item e solicite a revisão por aqui.',time:'09:10',kind:'message'},{from:'client',text:'Bom dia. Vamos revisar os pedidos e os itens de armazenagem.',time:'09:18',kind:'message'}];
+const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+function visibleRecords(){return activeService==='all'?records:records.filter(x=>x.service===activeService)}
+function summary(){const total=key=>records.filter(x=>x.service===key).reduce((s,x)=>s+x.amount,0);return {all:records.reduce((s,x)=>s+x.amount,0),distribution:total('distribution'),storage:total('storage'),os:total('os'),handling:total('handling'),pending:total('pending')}}
+function renderCards(){const sums=summary();document.getElementById('summary-cards').innerHTML=services.map(([key,label,icon])=>`<button onclick="chooseService('${key}')" class="text-left bg-white border ${activeService===key?'border-blue-500 ring-2 ring-blue-100':'border-slate-200'} rounded-2xl p-4 shadow-soft hover:border-blue-400 transition"><div class="flex items-center justify-between gap-2"><span class="text-[11px] uppercase leading-tight tracking-wide text-slate-500 font-bold">${label}</span><i class="fa-solid ${icon} text-brand-blue"></i></div><div class="mt-3 text-xl font-extrabold tracking-tight ${key==='all'?'text-brand-blue':'text-slate-800'}">${brl(sums[key])}</div></button>`).join('')}
+function chooseService(key){activeService=key;selected.clear();render()}
+function renderTabs(){document.getElementById('service-tabs').innerHTML=services.slice(1).map(([key,label])=>`<button onclick="chooseService('${key}')" class="whitespace-nowrap border-b-2 pb-3 text-sm font-semibold ${activeService===key?'tab-active':'tab-inactive'}">${label}</button>`).join('')}
+function renderRows(){const rows=visibleRecords(),q=document.getElementById('search').value.trim().toLowerCase(),filtered=rows.filter(x=>`${x.reference} ${x.description} ${x.type}`.toLowerCase().includes(q));document.getElementById('report-title').textContent=activeService==='all'?'Todos os serviços da competência':services.find(x=>x[0]===activeService)[1];document.getElementById('report-hint').textContent=`${filtered.length} item(ns) exibido(s) · selecione itens específicos para aprovar ou solicitar revisão.`;document.getElementById('table-head').innerHTML='<tr><th class="px-4 py-3 w-10"><input type="checkbox" aria-label="Selecionar todos os itens exibidos" onchange="toggleVisible(this.checked)"></th><th class="px-4 py-3">Tipo</th><th class="px-4 py-3">Pedido / referência</th><th class="px-4 py-3">Descrição analítica</th><th class="px-4 py-3">Serviço</th><th class="px-4 py-3 text-right">Valor</th><th class="px-4 py-3">Status</th></tr>';document.getElementById('table-body').innerHTML=filtered.map(x=>`<tr class="hover:bg-blue-50/40"><td class="px-4 py-3"><input type="checkbox" ${selected.has(x.id)?'checked':''} onchange="toggleOne('${x.id}',this.checked)" aria-label="Selecionar ${x.reference}"></td><td class="px-4 py-3 whitespace-nowrap">${x.type}</td><td class="px-4 py-3 font-semibold whitespace-nowrap">${x.reference}</td><td class="px-4 py-3 min-w-[320px]">${x.description}</td><td class="px-4 py-3">${x.detail}</td><td class="px-4 py-3 text-right font-semibold whitespace-nowrap">${brl(x.amount)}</td><td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs ${x.status==='Aprovado'?'bg-emerald-50 text-emerald-800':x.status==='Revisão solicitada'?'bg-amber-50 text-amber-800':'bg-blue-50 text-blue-800'}">${x.status}</span></td></tr>`).join('');document.getElementById('no-rows').classList.toggle('hidden',filtered.length>0);document.getElementById('service-total').textContent=`Total exibido: ${brl(filtered.reduce((s,x)=>s+x.amount,0))}`;document.getElementById('selected-count').textContent=`${selected.size} item(ns) selecionado(s)`}
+function renderHistory(){document.getElementById('history-body').innerHTML=history.map(h=>`<tr><td class="px-5 py-3 whitespace-nowrap">${h.date}</td><td class="px-5 py-3">${h.item}</td><td class="px-5 py-3">${h.action}</td><td class="px-5 py-3">${h.note||'—'}</td><td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs ${h.action==='Aprovado'?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-800'}">${h.action==='Aprovado'?'Concluído':'Em análise'}</span></td></tr>`).join('');document.getElementById('history-empty').classList.toggle('hidden',history.length>0)}
+function render(){renderCards();renderTabs();renderRows();renderHistory()}
+function toggleOne(id,on){on?selected.add(id):selected.delete(id);renderRows()}
+function toggleVisible(on){visibleRecords().filter(x=>`${x.reference} ${x.description} ${x.type}`.toLowerCase().includes(document.getElementById('search').value.trim().toLowerCase())).forEach(x=>on?selected.add(x.id):selected.delete(x.id));renderRows()}
+function selectVisible(){toggleVisible(true);toast('Itens exibidos selecionados.')}
+function approveSelected(){if(!selected.size){toast('Selecione ao menos um item para aprovar.');return}const items=records.filter(x=>selected.has(x.id));const refs=items.map(x=>x.reference).join(', ');items.forEach(x=>{x.status='Aprovado';history.unshift({date:new Date().toLocaleString('pt-BR'),item:x.reference+' · '+x.detail,action:'Aprovado',note:'Aprovação do cliente'});});postChat('client',`Aprovei ${items.length} item(ns): ${refs}.`,'approval');const count=items.length;selected.clear();render();toast(`${count} item(ns) aprovado(s). Ação registrada no chat; notificação por e-mail preparada.`)}
+function openReview(){if(!selected.size){toast('Selecione os pedidos, serviços ou itens que deseja revisar.');return}document.getElementById('review-items').textContent=`A solicitação será vinculada a ${selected.size} item(ns): ${records.filter(x=>selected.has(x.id)).map(x=>x.reference).join(', ')}.`;document.getElementById('review-reason').value='';const modal=document.getElementById('review-modal');modal.classList.remove('hidden');modal.classList.add('flex');document.body.classList.add('modal-open');setTimeout(()=>document.getElementById('review-reason').focus(),40)}
+function closeReview(){const modal=document.getElementById('review-modal');modal.classList.add('hidden');modal.classList.remove('flex');document.body.classList.remove('modal-open')}
+function submitReview(){const reason=document.getElementById('review-reason').value.trim();if(!reason){toast('Descreva a crítica para enviar a solicitação.');document.getElementById('review-reason').focus();return}const items=records.filter(x=>selected.has(x.id));const refs=items.map(x=>x.reference).join(', ');items.forEach(x=>{x.status='Revisão solicitada';history.unshift({date:new Date().toLocaleString('pt-BR'),item:x.reference+' · '+x.detail,action:'Revisão solicitada',note:reason});});postChat('client',`Solicito revisão de ${items.length} item(ns): ${refs}. Motivo: ${reason}`,'review');const count=items.length;selected.clear();closeReview();render();toast(`Revisão de ${count} item(ns) registrada no chat; notificação por e-mail preparada.`)}
+function refreshChatFromStore(){try{const saved=JSON.parse(localStorage.getItem(chatKey)||'null');if(Array.isArray(saved)&&saved.length){const customerMessages=saved.filter(m=>!m.client||m.client==='LRL · LOREAL BRASIL').map(m=>({...m,client:'LRL · LOREAL BRASIL'}));if(customerMessages.length)chatMessages=customerMessages}}catch(e){}}
+function saveChat(){try{const saved=JSON.parse(localStorage.getItem(chatKey)||'[]'),otherClients=Array.isArray(saved)?saved.filter(m=>m.client&&m.client!=='LRL · LOREAL BRASIL'):[];localStorage.setItem(chatKey,JSON.stringify([...otherClients,...chatMessages.map(m=>({...m,client:'LRL · LOREAL BRASIL'}))]))}catch(e){}}
+function postChat(from,text,kind='message'){refreshChatFromStore();chatMessages.push({client:'LRL · LOREAL BRASIL',from,text,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),kind});saveChat();renderChat();}
+function chatSafe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderChat(){const feed=document.getElementById('chat-feed');if(!feed)return;feed.innerHTML=chatMessages.map(m=>m.kind==='approval'||m.kind==='review'?`<div class="mx-auto max-w-xl rounded-xl border ${m.kind==='approval'?'border-emerald-200 bg-emerald-50 text-emerald-900':'border-amber-200 bg-amber-50 text-amber-950'} px-4 py-3 text-sm"><div class="font-bold text-xs uppercase mb-1"><i class="fa-solid ${m.kind==='approval'?'fa-circle-check':'fa-rotate'} mr-1"></i>${m.kind==='approval'?'Aprovação registrada':'Revisão solicitada'} · ${chatSafe(m.time)}</div>${chatSafe(m.text)}<div class="text-[10px] mt-2 opacity-70"><i class="fa-regular fa-envelope mr-1"></i>Notificação por e-mail prevista ao responsável</div></div>`:`<div class="flex ${m.from===chatMode?'justify-end':'justify-start'}"><div class="max-w-[82%] rounded-2xl px-4 py-3 text-sm shadow-sm ${m.from===chatMode?'bg-blue-600 text-white rounded-br-sm':'bg-white text-slate-800 rounded-bl-sm'}">${chatSafe(m.text)}<div class="text-[10px] mt-2 text-right ${m.from===chatMode?'text-blue-100':'text-slate-400'}">${chatSafe(m.time)}</div></div></div>`).join('');feed.scrollTop=feed.scrollHeight;const preview=chatMessages.at(-1)?.text||'Conversa sobre faturamento';document.getElementById('chat-preview').textContent=preview;}
+function setChatMode(mode){chatMode=mode;document.getElementById('chat-role-label').textContent=mode==='internal'?'Visão interna · atendimento de faturamento':'Conversa com a equipe de faturamento';document.getElementById('chat-mode-client').className=`rounded-lg px-3 py-2 text-xs font-semibold ${mode==='client'?'bg-blue-50 text-brand-blue':'text-slate-500'}`;document.getElementById('chat-mode-internal').className=`rounded-lg px-3 py-2 text-xs font-semibold ${mode==='internal'?'bg-blue-50 text-brand-blue':'text-slate-500'}`;document.getElementById('chat-input').placeholder=mode==='internal'?'Digite uma resposta para o cliente...':'Digite uma mensagem para o faturamento...';document.getElementById('chat-sidebar').classList.toggle('md:block',mode==='internal');document.getElementById('chat-sidebar').classList.toggle('hidden',mode!=='internal');renderChat();}
+function openChat(mode='client'){refreshChatFromStore();const modal=document.getElementById('chat-modal');modal.classList.remove('hidden');modal.classList.add('flex');document.body.classList.add('modal-open');setChatMode(mode);}
+function closeChat(){const modal=document.getElementById('chat-modal');modal.classList.add('hidden');modal.classList.remove('flex');document.body.classList.remove('modal-open')}
+function sendChatMessage(){const input=document.getElementById('chat-input'),text=input.value.trim();if(!text){toast('Digite uma mensagem antes de enviar.');return}postChat(chatMode,text);input.value='';}
+function exportReport(){const rows=visibleRecords(),header=['Tipo','Pedido / referência','Descrição analítica','Serviço','Valor','Status'],csv=[header,...rows.map(x=>[x.type,x.reference,x.description,x.detail,x.amount.toFixed(2).replace('.',','),x.status])].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n'),blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='LRL_faturamento_setembro_2026.csv';a.click();URL.revokeObjectURL(a.href);toast('Relatório da competência baixado.')}
+function toast(message){const el=document.getElementById('toast');el.textContent=message;el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),3200)}
+document.getElementById('review-modal').addEventListener('click',e=>{if(e.target.id==='review-modal')closeReview()});document.getElementById('chat-modal').addEventListener('click',e=>{if(e.target.id==='chat-modal')closeChat()});document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChatMessage()});window.addEventListener('storage',e=>{if(e.key===chatKey){refreshChatFromStore();renderChat()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeReview();closeChat()}});render();
+</script>
 </body>
 </html>
